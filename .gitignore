@@ -1,1 +1,7 @@
 .idea
+.env
+vendor
+/composer.lock
+/composer.json
+/.env.example
+/node_modules/

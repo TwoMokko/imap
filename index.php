@@ -1,17 +1,19 @@
 <?php
+
+    require_once 'vendor/autoload.php';
+
+    $dotenv = Dotenv\Dotenv::createImmutable("./");
+    $dotenv->load();
+
     ini_set('extension','php_imap.dll');
 
-    $server                                     = '{imap.yandex.ru:993/imap/ssl}';
-    $directory                                  = 'fold';
-    $user                                       = 'sashamehovnikova@yandex.ru';
-    $password                                   = 'valiDate22';
-    $mailbox                                    = $server . $directory;
+    $mailbox = $_ENV['SERVER'] . $_ENV['DIRECTORY'];
 
-    $imap = imap_open($mailbox, $user, $password);
+    $imap = imap_open($mailbox, $_ENV['USER'], $_ENV['PASSWORD']);
 //    $mails_id = imap_search($imap, 'ALL');
     $mails_id = imap_search($imap, 'NEW');
 
-    if (empty($mails_id)) die('нет писем');
+    if (empty($mails_id)) die('нет новых писем');
 
     foreach ($mails_id as $num) {
         // Заголовок письма

@@ -10,7 +10,7 @@
     $mailbox = $_ENV['SERVER'] . $_ENV['DIRECTORY'];
 
     $imap = imap_open($mailbox, $_ENV['USER'], $_ENV['PASSWORD']);
-    $mails_id = imap_search($imap, 'ON "28-Apr-2023"');
+    $mails_id = imap_search($imap, 'ON "6-Apr-2023"');
 //    $mails_id = imap_search($imap, 'ON "06-Apr-2023"');
 //    $mails_id = imap_search($imap, "NEW');
 
@@ -20,16 +20,13 @@
         // Заголовок письма
         $header = imap_headerinfo($imap, $num);
         $header = json_decode(json_encode($header), true);
-//        var_dump($header);
-//        die;
+
         (in_array($header['subject'], $header)) ? $subject = mb_decode_mimeheader($header['subject']) : $subject = 'нет темы';
         $date = mb_decode_mimeheader($header['date']);
         $toadress = $header['toaddress'];
         $fromadress = $header['from'][0]['mailbox'] . "@" . $header['from'][0]['host'];
         $charset = imap_bodystruct($imap, $num, "1")->parameters[0]->value;
 
-        dump(imap_bodystruct($imap, $num, "1"));
-//        continue;
         echo '<strong>Дата</strong>'; echo mb_decode_mimeheader($header['date']) . "<br>";
         echo '<strong>Тема</strong>'; echo $subject . "<br>";
         echo '<strong>Кому</strong>'; echo mb_decode_mimeheader($header['toaddress']) . "<br>";
@@ -38,10 +35,34 @@
 
 //        // Тело письма
 //        $message = ((imap_body($imap, $num)));
-
-
         $message = imap_fetchbody($imap, $num, 1, FT_PEEK);
-        dump(imap_fetchstructure($imap, $num));
+        $arr = imap_fetchstructure($imap, $num);
+
+//        var_dump($arr);
+
+        $iter = 0;
+//        die;
+
+        if (!function_exists('foundCharset')) {
+            function foundCharset($arr, $iter): bool {
+                dump($iter);
+                if ($iter >= 10) return false;
+                if (isset($arr->subtype) && $arr->subtype === 'HTML') {
+                    echo '<br>SUB ' . $arr->subtype;
+                    echo '<br>CHAR ' . $arr->parameters[0]->value;
+                    return false;
+                }
+                if (!isset($arr->parts)) return false;
+                foreach ($arr->parts as $elem) {
+                    if (!isset($elem->parts)) continue;
+                    foundCharset($elem->parts, $iter + 1);
+                }
+                return false;
+            }
+        }
+
+        foundCharset($arr, $iter + 1);
+
         continue;
         $message = match ($charset) {
             'UTF-8' => quoted_printable_decode($message),

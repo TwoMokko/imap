@@ -18,6 +18,8 @@ $ids = imap_search($imap, 'SINCE "15-Aug-2023" BEFORE "20-Sep-2023"', FT_PEEK);
 
 if (!$ids) die('нет новых писем');
 
+$mysqli = mysqli_connect('localhost', 'root', '', 'test');
+
 $iter = 0;
 foreach ($ids as $id) {
     $data = getData($imap, $id);
@@ -26,8 +28,11 @@ foreach ($ids as $id) {
 		echo '<strong>Тема:</strong> ', $data['subject'], '<br>';
 		echo '<strong>Получатель:</strong> ', $data['recipient'], '<br>';
 		echo '<strong>Отправитель: </strong>', $data['senderName'], ' (', $data['sender'], ')', '<br>';
-		echo '<strong>Сообщение:</strong><br>', $data['message'], '<br>';
+        echo '<strong>Сценарий:</strong><br>', $data['scenario'], '<br>';
+        echo '<strong>Сообщение:</strong><br>', $data['message'], '<br>';
 		echo '-----------<br><br>';
+
+    sendData($mysqli, $data);
 }
 
 imap_close($imap);
@@ -42,7 +47,8 @@ function getData($imap, int $uid): array {
         'recipient' => $headerInfo->toaddress,
         'sender' => $headerInfo->from[0]->mailbox . '@' . $headerInfo->from[0]->host,
         'senderName' => mb_decode_mimeheader($headerInfo->fromaddress),
-        'message' => getBody($imap, $uid, $structure)
+        'message' => getBody($imap, $uid, $structure),
+        'scenario' => getScenario($headerInfo->toaddress)
     ];
 }
 
@@ -86,4 +92,20 @@ function getMimeType(stdClass $structure): string {
     $primaryMimetype = ['TEXT', 'MULTIPART', 'MESSAGE', 'APPLICATION', 'AUDIO', 'IMAGE', 'VIDEO', 'OTHER'];
 
     return $structure->subtype ? $primaryMimetype[(int)$structure->type] . '/' . $structure->subtype : 'TEXT/PLAIN';
+}
+
+function getScenario(string $scenario): string {
+    $nameMail = explode('@', $scenario)[0];
+    if ($nameMail === 'mail') return 'прямое';
+    return 'подмена адреса';
+}
+
+function sendData(mysqli $mysqli, array $data): bool|mysqli_result {
+    $date = mysqli_real_escape_string($mysqli, $data['date']);
+    $subject = mysqli_real_escape_string($mysqli, $data['subject']);
+    $recipient = mysqli_real_escape_string($mysqli, $data['recipient']);
+    $sender = mysqli_real_escape_string($mysqli, $data['sender']);
+    $message = mysqli_real_escape_string($mysqli, $data['message']);
+    $scenario = mysqli_real_escape_string($mysqli, $data['scenario']);
+    return mysqli_query("INSERT INTO `imap` (`date`, `subject`, `recipient`, `sender`, `message`, `scenario`) VALUES ($date, $subject, $recipient, $sender, $message, $scenario)");
 }

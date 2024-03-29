@@ -17,12 +17,21 @@ $ids = imap_search($imap, 'SINCE "15-Aug-2023" BEFORE "20-Sep-2023"', FT_PEEK);
 //$mails_id = imap_search($imap, "NEW');
 
 if (!$ids) die('нет новых писем');
+$dbName = $_ENV['DB_DATABASE'];
+$dbHost = $_ENV['DB_HOST'];
+$connect = new PDO("mysql:host=$dbHost;dbname=$dbName", $_ENV['DB_USERNAME'], $_ENV['DB_PASSWORD']);
+$connect->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-$mysqli = mysqli_connect('localhost', 'root', '', 'test');
+$table = $_ENV['DB_TABLE'];
+$field = $_ENV['DB_FIELD'];
+$foreignTable = $_ENV['DB_FOREIGN_TABLE'];
+$foreignField = $_ENV['DB_FOREIGN_FIELD'];
+
+createTable($connect, $table, $field, $foreignTable, $foreignField);
 
 $iter = 0;
 foreach ($ids as $id) {
-    $data = getData($imap, $id);
+    $data = getData($imap, $id, $connect);
 
 		echo '<strong>Дата:</strong> ', $data['date'], '<br>';
 		echo '<strong>Тема:</strong> ', $data['subject'], '<br>';
@@ -32,23 +41,30 @@ foreach ($ids as $id) {
         echo '<strong>Сообщение:</strong><br>', $data['message'], '<br>';
 		echo '-----------<br><br>';
 
-    sendData($mysqli, $data);
+    sendData($connect, $data, $table);
 }
 
 imap_close($imap);
+$connect = null;
 
-function getData($imap, int $uid): array {
+function getData($imap, int $uid, PDO $connect): array {
     $headerInfo = imap_headerinfo($imap, $uid);
     $structure = imap_fetchstructure($imap, $uid, FT_UID);
+
+    $matches = preg_match ('/[^ "][a-z0-9]{1,}@hy-lok.ru/m', $headerInfo->toaddress, $found);
+    $recipient = ($matches) ? $found[0] : 'ошибка в регулярном выражении поиска емайла';
+
+    $scenarioAndVid = getScenarioAndVid($recipient, $connect);
 
     return [
         'date' => $headerInfo->date,
         'subject' => property_exists($headerInfo, 'subject') ? mb_decode_mimeheader($headerInfo->subject) : 'нет темы',
-        'recipient' => $headerInfo->toaddress,
+        'recipient' => $recipient,
         'sender' => $headerInfo->from[0]->mailbox . '@' . $headerInfo->from[0]->host,
         'senderName' => mb_decode_mimeheader($headerInfo->fromaddress),
-        'message' => getBody($imap, $uid, $structure),
-        'scenario' => getScenario($headerInfo->toaddress)
+        'message' => strip_tags(getBody($imap, $uid, $structure)),
+        'scenario' => $scenarioAndVid['scenario'],
+        'visitor_id' => $scenarioAndVid['visitor_id']
     ];
 }
 
@@ -67,7 +83,6 @@ function getPart($imap, int $uid, stdClass $structure, string $mimeType, string 
             default => $text,
         };
         if ($structure->parameters[0]->attribute == 'charset') {
-//				echo $structure->parameters[0]->value, ' ';
             $text = match ($structure->parameters[0]->value) {
                 'koi8-r' => mb_convert_encoding($text, 'UTF-8', 'KOI8-R'),
                 'windows-1251' => mb_convert_encoding($text, 'UTF-8', 'WINDOWS-1251'),
@@ -94,18 +109,40 @@ function getMimeType(stdClass $structure): string {
     return $structure->subtype ? $primaryMimetype[(int)$structure->type] . '/' . $structure->subtype : 'TEXT/PLAIN';
 }
 
-function getScenario(string $scenario): string {
+function getScenarioAndVid(string $scenario, PDO $connect): array {
     $nameMail = explode('@', $scenario)[0];
-    if ($nameMail === 'mail') return 'прямое';
-    return 'подмена адреса';
+    if ($nameMail === 'mail') return [
+        'scenario' => 'прямое',
+        'visitors_id' => null
+    ];
+    $stmt = $connect->prepare("SELECT `id` FROM visitors_info WHERE `vid` = ?");
+    $stmt->execute([$nameMail]);
+    $id = $stmt->fetch();
+    echo $id['id'];
+    return [
+        'scenario' => 'подмена адреса',
+        'visitor_id' => $id['id']
+    ];
 }
 
-function sendData(mysqli $mysqli, array $data): bool|mysqli_result {
-    $date = mysqli_real_escape_string($mysqli, $data['date']);
-    $subject = mysqli_real_escape_string($mysqli, $data['subject']);
-    $recipient = mysqli_real_escape_string($mysqli, $data['recipient']);
-    $sender = mysqli_real_escape_string($mysqli, $data['sender']);
-    $message = mysqli_real_escape_string($mysqli, $data['message']);
-    $scenario = mysqli_real_escape_string($mysqli, $data['scenario']);
-    return mysqli_query("INSERT INTO `imap` (`date`, `subject`, `recipient`, `sender`, `message`, `scenario`) VALUES ($date, $subject, $recipient, $sender, $message, $scenario)");
+function createTable(PDO $connect, string $table, string $field, string $foreignTable, string $foreignField): void {
+    $sql = "CREATE TABLE IF NOT EXISTS $table (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY NOT NULL,
+    `visitor_id` INT,
+    `date` TIMESTAMP,
+    `subject` VARCHAR(250),
+    `recipient` VARCHAR(50),
+    `sender` VARCHAR(50),
+    `message`	 TEXT,
+    `scenario` SET('прямое', 'подмена адреса'), 
+	FOREIGN KEY ($field) REFERENCES $foreignTable($foreignField)
+    )";
+    $connect->exec($sql);
+}
+
+function sendData(PDO $connect, array $data, string$table): void {
+    $date = (new DateTime($data['date']))->format('Y-m-d H:i:s');
+    $stmt = $connect->prepare("INSERT INTO $table VALUES (0, ?, ?, ?, ?, ?, ?, ?)");
+    $stmt->execute([$data['visitor_id'], $date, $data['subject'], $data['recipient'], $data['sender'], $data['message'], $data['scenario']]);
+//    return mysqli_stmt_get_result($stmt);
 }

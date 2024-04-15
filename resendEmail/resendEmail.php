@@ -1,5 +1,4 @@
 <?php
-die('stop');
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\SMTP;
@@ -15,8 +14,9 @@ $mailbox = $_ENV['SERVER'] . $_ENV['DIRECTORY'];
 
 $imap = imap_open($mailbox, $_ENV['USER'], $_ENV['PASSWORD']);
 if (!$imap) die('Ошибка соединения');
-$ids = imap_search($imap, 'SINCE "20-Jun-2023" BEFORE "28-Jun-2023"', FT_PEEK);
+//$ids = imap_search($imap, 'UNSEEN');
 //$ids = imap_search($imap, 'ALL');
+$ids = imap_search($imap, 'SINCE "01-Apr-2024" BEFORE "10-Apr-2024"', FT_PEEK);
 //$mails_id = imap_search($imap, 'ON "15-Sep-2023"', FT_PEEK);
 //$mails_id = imap_search($imap, 'SEEN', FT_PEEK);
 //$mails_id = imap_search($imap, "NEW');
@@ -74,7 +74,7 @@ function getBody($imap, int $uid, stdClass $structure): string {
 function getPart($imap, int $uid, stdClass $structure, string $mimeType, string $section = ''): string {
     if ($mimeType == getMimeType($structure)) {
         if (!$section) $section = 1;
-        $text = imap_fetchbody($imap, $uid, $section, FT_PEEK);
+        $text = imap_fetchbody($imap, $uid, $section);
         $text = match ($structure->encoding) {
             3 => imap_base64($text),
             4 => imap_qprint($text),
@@ -133,11 +133,11 @@ function sendMail($data): void
     $sender = $data['sender'];
     $message = $data['message'];
 
-    $mail->setFrom('info@fitok.su', $data['senderName']);                       // от кого (email и имя)
+    $mail->setFrom('mail@hylok.ru', $data['senderName']);                       // от кого (email и имя)
     $mail->addAddress($_ENV['SMTP_TO_EMAIL'], $_ENV['SMTP_TO_NAME']);                   // кому (email и имя)
 // html текст письма
     $mail->isHTML(true);
-    $mail->Subject = $data['subject'] . ' -hylok-site';
+    $mail->Subject = $data['subject'] . '-hylok-site';
 
     $mail->msgHTML("<div style='background-color: lightgray;padding: 12px'><strong>Письмо от: </strong>$sender</div>$message");
 

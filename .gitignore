@@ -5,3 +5,5 @@ vendor
 /composer.json
 /.env.example
 /node_modules/
+/resendEmail/resendHylok.php
+/resendEmail/resendHy-lok.php

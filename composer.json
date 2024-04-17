@@ -1,0 +1,15 @@
+{
+    "require": {
+        "vlucas/phpdotenv": "^5.6",
+      "ext-imap": "*",
+      "ext-iconv": "*",
+      "ext-mbstring": "*",
+        "ddeboer/imap": "^1.18",
+      "ext-mysqli": "*",
+      "ext-pdo": "*",
+        "phpmailer/phpmailer": "^6.9"
+    },
+    "require-dev": {
+        "symfony/var-dumper": "^6.4"
+    }
+}

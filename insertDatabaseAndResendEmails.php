@@ -4,7 +4,7 @@
     require_once 'vendor/autoload.php';
     require_once 'run.php';
 
-    $dotenv = Dotenv\Dotenv::createImmutable("./");
+    $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
     $dotenv->load();
 
     ini_set('extension', 'php_imap.dll');
@@ -33,6 +33,30 @@
         'titleText' => $_ENV['TITLE_TEXT_HL'],
         'mail' => 'hy-lok',
     ];
+    $envDataSW = [
+        'directory' => $_ENV['DIRECTORY_SW'],
+        'username' => $_ENV['USER_SW'],
+        'password' => $_ENV['PASSWORD_SW'],
+        'dbHost' => $_ENV['DB_HOST_SW'],
+        'dbUsername' => $_ENV['DB_USERNAME_SW'],
+        'dbPassword' => $_ENV['DB_PASSWORD_SW'],
+        'dataBase' => $_ENV['DB_DATABASE_SW'],
+        'dbForeignTable' => $_ENV['DB_FOREIGN_TABLE_SW'],
+        'titleText' => $_ENV['TITLE_TEXT_SW'],
+        'mail' => 'swagelok',
+    ];
+    $envDataWIKA = [
+        'directory' => $_ENV['DIRECTORY_WIKA'],
+        'username' => $_ENV['USER_WIKA'],
+        'password' => $_ENV['PASSWORD_WIKA'],
+        'dbHost' => $_ENV['DB_HOST_WIKA'],
+        'dbUsername' => $_ENV['DB_USERNAME_WIKA'],
+        'dbPassword' => $_ENV['DB_PASSWORD_WIKA'],
+        'dataBase' => $_ENV['DB_DATABASE_WIKA'],
+        'dbForeignTable' => $_ENV['DB_FOREIGN_TABLE_WIKA'],
+        'titleText' => $_ENV['TITLE_TEXT_WIKA'],
+        'mail' => 'wika',
+    ];
 
-    run($envDataHL);
+//    run($envDataHL);
     run($envDataHY);

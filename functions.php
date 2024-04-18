@@ -14,6 +14,12 @@
             case 'hylok':
                 $matches = preg_match ('/[^ "][a-z0-9]{1,}@hylok.ru/m', $headerInfo->toaddress, $found);
                 break;
+            case 'swagelok':
+                $matches = preg_match ('/[^ "][a-z0-9]{1,}@.swagelok.su/m', $headerInfo->toaddress, $found);
+                break;
+            case 'wika':
+                $matches = preg_match ('/[^ "][a-z0-9]{1,}@wika-manometry.ru/m', $headerInfo->toaddress, $found);
+                break;
         }
         $recipient = ($matches) ? $found[0] : 'ошибка в регулярном выражении поиска емайла';
 
@@ -123,19 +129,20 @@
         $mail = new PHPMailer();
         $mail->SMTPDebug = SMTP::DEBUG_SERVER;
         $mail->isSMTP();                                                                    // Отправка через SMTP
-        $mail->Host   = $_ENV['SMTP_HOST'];                                             // Адрес SMTP сервера
-        $mail->Port   = 465;                                                                // Адрес порта
+        $mail->Host   = $_ENV['SMTP_HOST'];                                                 // Адрес SMTP сервера
+        $mail->Port   = $_ENV['SMTP_PORT
+        '];                                                                // Адрес порта
         $mail->SMTPAuth   = true;                                                           // Enable SMTP authentication
-        $mail->Username   = $dataEnv['username'];                                               // ваше имя пользователя (без домена и @) info@swagelok.su
-        $mail->Password   = $dataEnv['password'];                                              // ваш пароль zRX8r*5Z
+        $mail->Username   = $_ENV['SMTP_EMAIL'];                                            // ваше имя пользователя (без домена и @) info@swagelok.su
+        $mail->Password   = $_ENV['SMTP_PASSWORD'];                                         // ваш пароль zRX8r*5Z
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;                                    // шифрование ssl
         $mail->CharSet = "utf-8";
 
         $sender = $data['sender'];
         $message = $data['message'];
 
-        $mail->setFrom($dataEnv['username'], $data['senderName']);                      // от кого (email и имя)
-        $mail->addAddress($_ENV['SMTP_TO_EMAIL'], $_ENV['SMTP_TO_NAME']);                                 // кому (email и имя)
+        $mail->setFrom($_ENV['SMTP_TO_EMAIL'], 'Zakaz Fluidline');                    // от кого (email и имя)
+        $mail->addAddress($_ENV['SMTP_TO_EMAIL'], $_ENV['SMTP_TO_NAME']);                   // кому (email и имя)
     // html текст письма
         $mail->isHTML(true);
         $mail->Subject = $data['subject'] . $dataEnv['titleText'];

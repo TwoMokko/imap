@@ -3,7 +3,7 @@
 require_once 'functions.php';
 
 function run(array $envDataHL): void {
-    $table = 'email_tracking_test';
+    $table = 'email_tracking';
     $mailbox = '{imap.yandex.ru:993/imap/ssl}' . $envDataHL['directory'];
     $imap = imap_open($mailbox, $envDataHL['username'], $envDataHL['password']);
     if (!$imap) die('Ошибка соединения');

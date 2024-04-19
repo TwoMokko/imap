@@ -33,7 +33,8 @@
             'senderName' => mb_decode_mimeheader($headerInfo->fromaddress),
             'message' => (getBody($imap, $uid, $structure)),
             'scenario' => $scenarioAndVid['scenario'],
-            'visitor_id' => $scenarioAndVid['visitor_id']
+            'visitor_id' => $scenarioAndVid['visitor_id'],
+            'client_id' => getRoistatId($connect, $foreignTable, $scenarioAndVid['visitor_id']),
         ];
     }
 
@@ -114,6 +115,14 @@
         $connect->exec($sql);
     }
 
+    function getRoistatId(PDO $connect, string $foreignTable, int $vid): int|string {
+        $stmt = $connect->prepare("SELECT `client_id` FROM $foreignTable WHERE `id` = ?");
+        $stmt->execute([$vid]);
+        $result = $stmt->fetch();
+        if ($result['client_id'] === null) return 'нет значения';
+        return $result ? $result['client_id'] : 'нет значения';
+    }
+
     function sendData(PDO $connect, array $data, string $table): void {
         $date = new DateTime($data['date']);
         $dateResult = $date->format('Y-m-d H:i:s');
@@ -146,12 +155,15 @@
     // html текст письма
         $mail->isHTML(true);
         $mail->Subject = $data['subject'] . $dataEnv['titleText'];
+        $mail->addCustomHeader('X-client_mail', $sender);
+        $mail->addCustomHeader('X-fluid_tag', $dataEnv['titleText']);
+        $mail->addCustomHeader('X-client_id', $data['client_id']);
 
-        $mail->msgHTML("<div style='background-color: lightgray;padding: 12px'><strong>Письмо от: </strong>$sender</div>$message");
+        $mail->msgHTML($message);
 
     // Отправляем
         if ($mail->send()) {
-            echo 'Письмо отправлено!';
+            echo 'Письмо отправлено!' . PHP_EOL;
         } else {
             echo 'Ошибка: ' . $mail->ErrorInfo;
         }

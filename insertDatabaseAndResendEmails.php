@@ -1,5 +1,5 @@
 <?php
-    die('stop');
+//    die('stop');
 
     require_once 'vendor/autoload.php';
     require_once 'run.php';
@@ -30,7 +30,7 @@
         'dbPassword' => $_ENV['DB_PASSWORD_HY'],
         'dataBase' => $_ENV['DB_DATABASE_HY'],
         'dbForeignTable' => $_ENV['DB_FOREIGN_TABLE_HY'],
-        'titleText' => $_ENV['TITLE_TEXT_HL'],
+        'titleText' => $_ENV['TITLE_TEXT_HY'],
         'mail' => 'hy-lok',
     ];
     $envDataSW = [
@@ -58,5 +58,6 @@
         'mail' => 'wika',
     ];
 
-//    run($envDataHL);
+    run($envDataHL);
     run($envDataHY);
+//    run($envDataSW);

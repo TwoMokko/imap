@@ -9,9 +9,9 @@ function run(array $envDataHL): void {
     if (!$imap) die('Ошибка соединения');
     $ids = imap_search($imap, 'UNSEEN');
 //$ids = imap_search($imap, 'ALL');
-//$ids = imap_search($imap, 'SINCE "15-Apr-2024" BEFORE "15-Apr-2024"', FT_PEEK);
+//    $ids = imap_search($imap, 'ON "28-Dec-2023"', FT_PEEK);
 
-    if (!$ids) die('нет новых писем');
+    if (!$ids) die(date("Y-m-d H:i:s") . ' нет новых писем' . PHP_EOL);
 
     $dbName = $envDataHL['dbUsername'];
     $dbHost = $envDataHL['dbHost'];

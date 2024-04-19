@@ -119,7 +119,7 @@
         $stmt = $connect->prepare("SELECT `client_id` FROM $foreignTable WHERE `id` = ?");
         $stmt->execute([$vid]);
         $result = $stmt->fetch();
-        if ($result['client_id'] === null) return 'нет значения';
+        if ($result['client_id'] === null) return 'barahlo';
         return $result ? $result['client_id'] : 'нет значения';
     }
 

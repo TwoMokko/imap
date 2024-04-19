@@ -7,9 +7,9 @@ function run(array $envDataHL): void {
     $mailbox = '{imap.yandex.ru:993/imap/ssl}' . $envDataHL['directory'];
     $imap = imap_open($mailbox, $envDataHL['username'], $envDataHL['password']);
     if (!$imap) die('Ошибка соединения');
-    $ids = imap_search($imap, 'UNSEEN');
+//    $ids = imap_search($imap, 'UNSEEN');
 //$ids = imap_search($imap, 'ALL');
-//    $ids = imap_search($imap, 'ON "28-Dec-2023"', FT_PEEK);
+    $ids = imap_search($imap, 'ON "28-Dec-2023"', FT_PEEK);
 
     if (!$ids) die(date("Y-m-d H:i:s") . ' нет новых писем' . PHP_EOL);
 

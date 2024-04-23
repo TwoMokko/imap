@@ -8,22 +8,25 @@
         $structure = imap_fetchstructure($imap, $uid);
 
         switch ($mail) {
-            case 'hy-lok':
+            case 'hy-lok.ru':
                 $matches = preg_match ('/[^ "][a-z0-9]{1,}@hy-lok.ru/m', $headerInfo->toaddress, $found);
                 break;
-            case 'hylok':
+            case 'hylok.ru':
                 $matches = preg_match ('/[^ "][a-z0-9]{1,}@hylok.ru/m', $headerInfo->toaddress, $found);
                 break;
-            case 'swagelok':
+            case 'swagelok.su':
                 $matches = preg_match ('/[^ "][a-z0-9]{1,}@.swagelok.su/m', $headerInfo->toaddress, $found);
                 break;
-            case 'wika':
+            case 'wika-manometry.ru':
                 $matches = preg_match ('/[^ "][a-z0-9]{1,}@wika-manometry.ru/m', $headerInfo->toaddress, $found);
                 break;
+            default:
+                break;
         }
-        $recipient = ($matches) ? $found[0] : 'ошибка в регулярном выражении поиска емайла';
+        $recipient = ($matches) ? $found[0] : $headerInfo->toaddress;
+//        $recipient = ($matches) ? $found[0] : 'ошибка в регулярном выражении поиска емайла';
 
-        $scenarioAndVid = getScenarioAndVid($recipient, $connect, $foreignTable);
+        $scenarioAndVid = getScenarioAndVid($recipient, $connect, $foreignTable, $mail);
 
         return [
             'date' => $headerInfo->date,
@@ -34,7 +37,6 @@
             'message' => (getBody($imap, $uid, $structure)),
             'scenario' => $scenarioAndVid['scenario'],
             'visitor_id' => $scenarioAndVid['visitor_id'],
-            'client_id' => getRoistatId($connect, $foreignTable, $scenarioAndVid['visitor_id']),
         ];
     }
 
@@ -83,8 +85,13 @@
     }
 
 
-    function getScenarioAndVid(string $scenario, PDO $connect, string $foreignTable): array {
-        $nameMail = explode('@', $scenario)[0];
+    function getScenarioAndVid(string $scenario, PDO $connect, string $foreignTable, string $mail): array {
+        $arraySeparatorMail = explode('@', $scenario);
+        if ($arraySeparatorMail[1] !== $mail) return [
+            'scenario' => 'откуда-то еще',
+            'visitor_id' => null
+        ];
+        $nameMail = $arraySeparatorMail[0];
         if ($nameMail === 'mail') return [
             'scenario' => 'прямое',
             'visitor_id' => null
@@ -109,13 +116,14 @@
         `recipient` VARCHAR(50),
         `sender` VARCHAR(50),
         `message`	 TEXT,
-        `scenario` SET('прямое', 'подмена адреса'), 
+        `scenario` SET('прямое', 'подмена адреса', 'откуда-то еще'), 
         FOREIGN KEY (visitor_id) REFERENCES $foreignTable($foreignField)
         )";
         $connect->exec($sql);
     }
 
-    function getRoistatId(PDO $connect, string $foreignTable, int $vid): int|string {
+    function getClientId(PDO $connect, string $foreignTable, mixed $vid): mixed {
+        if ($vid === null) return 'test';
         $stmt = $connect->prepare("SELECT `client_id` FROM $foreignTable WHERE `id` = ?");
         $stmt->execute([$vid]);
         $result = $stmt->fetch();
@@ -126,21 +134,18 @@
     function sendData(PDO $connect, array $data, string $table): void {
         $date = new DateTime($data['date']);
         $dateResult = $date->format('Y-m-d H:i:s');
-    //    var_dump($data['message']);
         $stmt = $connect->prepare("INSERT INTO $table VALUES (0, ?, ?, ?, ?, ?, ?, ?)");
         $stmt->execute([$data['visitor_id'], $dateResult, $data['subject'], $data['recipient'], $data['sender'], $data['message'], $data['scenario']]);
-    //    return mysqli_stmt_get_result($stmt);
     }
 
-    function sendMail(array $data, array $dataEnv): void
+    function sendMail(array $data, array $dataEnv, string $clientId): void
     {
     // Создаем письмо
         $mail = new PHPMailer();
         $mail->SMTPDebug = SMTP::DEBUG_SERVER;
         $mail->isSMTP();                                                                    // Отправка через SMTP
         $mail->Host   = $_ENV['SMTP_HOST'];                                                 // Адрес SMTP сервера
-        $mail->Port   = $_ENV['SMTP_PORT
-        '];                                                                // Адрес порта
+        $mail->Port   = $_ENV['SMTP_PORT'];                                                                // Адрес порта
         $mail->SMTPAuth   = true;                                                           // Enable SMTP authentication
         $mail->Username   = $_ENV['SMTP_EMAIL'];                                            // ваше имя пользователя (без домена и @) info@swagelok.su
         $mail->Password   = $_ENV['SMTP_PASSWORD'];                                         // ваш пароль zRX8r*5Z
@@ -157,7 +162,7 @@
         $mail->Subject = $data['subject'] . $dataEnv['titleText'];
         $mail->addCustomHeader('X-client_mail', $sender);
         $mail->addCustomHeader('X-fluid_tag', $dataEnv['titleText']);
-        $mail->addCustomHeader('X-client_id', $data['client_id']);
+        $mail->addCustomHeader('X-client_id', $clientId);
 
         $mail->msgHTML($message);
 

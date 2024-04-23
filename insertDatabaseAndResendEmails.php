@@ -19,7 +19,7 @@
         'dataBase' => $_ENV['DB_DATABASE_HL'],
         'dbForeignTable' => $_ENV['DB_FOREIGN_TABLE_HL'],
         'titleText' => $_ENV['TITLE_TEXT_HL'],
-        'mail' => 'hylok',
+        'mail' => 'hylok.ru',
     ];
     $envDataHY = [
         'directory' => $_ENV['DIRECTORY_HY'],
@@ -31,7 +31,7 @@
         'dataBase' => $_ENV['DB_DATABASE_HY'],
         'dbForeignTable' => $_ENV['DB_FOREIGN_TABLE_HY'],
         'titleText' => $_ENV['TITLE_TEXT_HY'],
-        'mail' => 'hy-lok',
+        'mail' => 'hy-lok.ru',
     ];
     $envDataSW = [
         'directory' => $_ENV['DIRECTORY_SW'],
@@ -43,7 +43,7 @@
         'dataBase' => $_ENV['DB_DATABASE_SW'],
         'dbForeignTable' => $_ENV['DB_FOREIGN_TABLE_SW'],
         'titleText' => $_ENV['TITLE_TEXT_SW'],
-        'mail' => 'swagelok',
+        'mail' => 'swagelok.su',
     ];
     $envDataWIKA = [
         'directory' => $_ENV['DIRECTORY_WIKA'],
@@ -55,9 +55,10 @@
         'dataBase' => $_ENV['DB_DATABASE_WIKA'],
         'dbForeignTable' => $_ENV['DB_FOREIGN_TABLE_WIKA'],
         'titleText' => $_ENV['TITLE_TEXT_WIKA'],
-        'mail' => 'wika',
+        'mail' => 'wika-manometry.ru',
     ];
 
-//    run($envDataHL);
+    run($envDataHL);
     run($envDataHY);
-//    run($envDataSW);
+    run($envDataSW);
+    run($envDataWIKA);

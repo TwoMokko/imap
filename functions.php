@@ -3,29 +3,20 @@
     use PHPMailer\PHPMailer\PHPMailer;
     use PHPMailer\PHPMailer\SMTP;
 
-    function getData($imap, int $uid, PDO $connect, string $foreignTable, string $mail): array|bool {
+    const UNDISCLOSED_RECIPIENTS = 'нераскрытые получатели';
+
+    function getData($imap, int $uid, PDO $connect, string $foreignTable, string $mail): array|bool
+    {
         $headerInfo = imap_headerinfo($imap, $uid);
         $structure = imap_fetchstructure($imap, $uid);
 
-        switch ($mail) {
-            case 'hy-lok.ru':
-                $matches = preg_match ('/[^ "][a-z0-9]{1,}@hy-lok.ru/m', $headerInfo->toaddress, $found);
-                break;
-            case 'hylok.ru':
-                $matches = preg_match ('/[^ "][a-z0-9]{1,}@hylok.ru/m', $headerInfo->toaddress, $found);
-                break;
-            case 'swagelok.su':
-                $matches = preg_match ('/[^ "][a-z0-9]{1,}@.swagelok.su/m', $headerInfo->toaddress, $found);
-                break;
-            case 'wika-manometry.ru':
-                $matches = preg_match ('/[^ "][a-z0-9]{1,}@wika-manometry.ru/m', $headerInfo->toaddress, $found);
-                break;
-            default:
-                break;
-        }
-        $recipient = ($matches) ? $found[0] : $headerInfo->toaddress;
-//        $recipient = ($matches) ? $found[0] : 'ошибка в регулярном выражении поиска емайла';
+//        echo '<br>header info: <br>';
+//        echo '<pre>';
+//        print_r($headerInfo->to);
+//        echo '<pre>';
+//        echo count($headerInfo->to);
 
+        $recipient = (isset($headerInfo->toaddress)) ? getRecipient($mail, $headerInfo->to) : UNDISCLOSED_RECIPIENTS;
         $scenarioAndVid = getScenarioAndVid($recipient, $connect, $foreignTable, $mail);
 
         return [
@@ -40,22 +31,44 @@
         ];
     }
 
-    function getBody($imap, int $uid, stdClass $structure): string {
+    function getRecipient(string $mail, array $headerInfoTo): string
+    {
+
+        $recipient = 'проверить getRecipient()';
+
+        if (count($headerInfoTo) == 1)
+        {
+            return $headerInfoTo[0]->mailbox .'@' . $headerInfoTo[0]->host;
+        }
+
+        foreach ($headerInfoTo as $item)
+        {
+            if ($item->host === $mail) $recipient =  $item->mailbox .'@' . $item->host;
+        }
+
+        return $recipient;
+    }
+    function getBody($imap, int $uid, stdClass $structure): string
+    {
         if ($body = getPart($imap, $uid, $structure, 'TEXT/HTML')) return $body;
         return getPart($imap, $uid, $structure, 'TEXT/PLAIN');
     }
 
-    function getPart($imap, int $uid, stdClass $structure, string $mimeType, string $section = ''): string {
-        if ($mimeType == getMimeType($structure)) {
+    function getPart($imap, int $uid, stdClass $structure, string $mimeType, string $section = ''): string
+    {
+        if ($mimeType == getMimeType($structure))
+        {
             if (!$section) $section = 1;
             $text = imap_fetchbody($imap, $uid, $section);
-            $text = match ($structure->encoding) {
+            $text = match ($structure->encoding)
+            {
                 3 => imap_base64($text),
                 4 => imap_qprint($text),
                 default => $text,
             };
     //        var_dump(($structure->parameters[0]->value));
-            if (gettype($structure->parameters) == 'array' && $structure->parameters[0]->attribute == 'charset') {
+            if (gettype($structure->parameters) == 'array' && $structure->parameters[0]->attribute == 'charset')
+            {
                 $text = match ($structure->parameters[0]->value) {
                     'koi8-r' => mb_convert_encoding($text, 'UTF-8', 'KOI8-R'),
                     'windows-1251' => mb_convert_encoding($text, 'UTF-8', 'WINDOWS-1251'),
@@ -68,8 +81,10 @@
             return $text;
         }
         // MULTIPART
-        if (property_exists($structure, 'parts') && $structure->type == 1) {
-            foreach ($structure->parts as $index => $subStruct) {
+        if (property_exists($structure, 'parts') && $structure->type == 1)
+        {
+            foreach ($structure->parts as $index => $subStruct)
+            {
                 $prefix = $section ? $section . '.' : '';
                 if ($data = getPart($imap, $uid, $subStruct, $mimeType, $prefix . ($index + 1))) return $data;
             }
@@ -78,16 +93,17 @@
         return '';
     }
 
-    function getMimeType(stdClass $structure): string {
+    function getMimeType(stdClass $structure): string
+    {
         $primaryMimetype = ['TEXT', 'MULTIPART', 'MESSAGE', 'APPLICATION', 'AUDIO', 'IMAGE', 'VIDEO', 'OTHER'];
-
         return $structure->subtype ? $primaryMimetype[(int)$structure->type] . '/' . $structure->subtype : 'TEXT/PLAIN';
     }
 
 
-    function getScenarioAndVid(string $scenario, PDO $connect, string $foreignTable, string $mail): array {
+    function getScenarioAndVid(string $scenario, PDO $connect, string $foreignTable, string $mail): array
+    {
         $arraySeparatorMail = explode('@', $scenario);
-        if ($arraySeparatorMail[1] !== $mail) return [
+        if ($scenario === UNDISCLOSED_RECIPIENTS || $arraySeparatorMail[1] !== $mail) return [
             'scenario' => 'откуда-то еще',
             'visitor_id' => null
         ];
@@ -100,14 +116,14 @@
         $stmt->execute([$nameMail]);
         $result = $stmt->fetch();
         $vid = $result ? $result['id'] : null;
-    //    var_dump($result);
         return [
             'scenario' => 'подмена адреса',
             'visitor_id' => $vid
         ];
     }
 
-    function createTable(PDO $connect, string $table, string $foreignTable, string $foreignField): void {
+    function createTable(PDO $connect, string $table, string $foreignTable, string $foreignField): void
+    {
         $sql = "CREATE TABLE IF NOT EXISTS $table (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY NOT NULL,
         `visitor_id` INT,
@@ -122,8 +138,9 @@
         $connect->exec($sql);
     }
 
-    function getClientId(PDO $connect, string $foreignTable, mixed $vid): mixed {
-        if ($vid === null) return 'test';
+    function getClientId(PDO $connect, string $foreignTable, mixed $vid): mixed
+    {
+        if ($vid === null) return 'barahlo';
         $stmt = $connect->prepare("SELECT `client_id` FROM $foreignTable WHERE `id` = ?");
         $stmt->execute([$vid]);
         $result = $stmt->fetch();
@@ -131,7 +148,11 @@
         return $result ? $result['client_id'] : 'нет значения';
     }
 
-    function sendData(PDO $connect, array $data, string $table): void {
+    function sendData(PDO $connect, array $data, string $table): void
+    {
+//        echo 'rec: ', $data['recipient'];
+//        die;
+
         $date = new DateTime($data['date']);
         $dateResult = $date->format('Y-m-d H:i:s');
         $stmt = $connect->prepare("INSERT INTO $table VALUES (0, ?, ?, ?, ?, ?, ?, ?)");
@@ -167,9 +188,11 @@
         $mail->msgHTML($message);
 
     // Отправляем
-        if ($mail->send()) {
+        if ($mail->send())
+        {
             echo 'Письмо отправлено!' . PHP_EOL;
-        } else {
+        } else
+        {
             echo 'Ошибка: ' . $mail->ErrorInfo;
         }
     }

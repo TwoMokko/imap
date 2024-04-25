@@ -59,6 +59,6 @@
     ];
 
     run($envDataHL);
-    run($envDataHY);
-    run($envDataSW);
-    run($envDataWIKA);
+//    run($envDataHY);
+//    run($envDataSW);
+//    run($envDataWIKA);

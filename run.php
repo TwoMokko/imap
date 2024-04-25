@@ -50,11 +50,11 @@ function run(array $envDataMail): void
         echo '<strong>Сообщение:</strong><br>', $data['message'], '<br>';
 
 
-        sendData($connect, $data, $table);
+//        sendData($connect, $data, $table);
         $clientId = getClientId($connect, $envDataMail['dbForeignTable'], $data['visitor_id']);
-        sendMail($data, $envDataMail, $clientId);
+//        sendMail($data, $envDataMail, $clientId);
 
-        imap_setflag_full($imap, $id, 'seen');
+//        imap_setflag_full($imap, $id, 'seen');
     }
 
     imap_close($imap);

@@ -3,12 +3,40 @@
     use PHPMailer\PHPMailer\PHPMailer;
     use PHPMailer\PHPMailer\SMTP;
 
+
+
     const UNDISCLOSED_RECIPIENTS = 'нераскрытые получатели';
 
     function getData($imap, int $uid, PDO $connect, string $foreignTable, string $mail): array|bool
     {
         $headerInfo = imap_headerinfo($imap, $uid);
         $structure = imap_fetchstructure($imap, $uid);
+        dump($structure);
+        require_once 'attachment.php';
+        $attachments = getPartAttachment($imap, $uid, $structure);
+        echo "Attachments: ";
+        var_dump($attachments);
+        $message = imap_fetchbody($imap, $uid, $attachments['section'], FT_UID);
+
+//        switch ($attachments['enc']) {
+//            case 0:
+//            case 1:
+//                $message = imap_8bit($message);
+//                break;
+//            case 2:
+//                $message = imap_binary($message);
+//                break;
+//            case 3:
+//                $message = imap_base64($message);
+//                break;
+//            case 4:
+//                $message = quoted_printable_decode($message);
+//                break;
+//        }
+
+        var_dump($message);
+
+        return false;
 
 //        echo '<br>header info: <br>';
 //        echo '<pre>';
@@ -56,6 +84,7 @@
 
     function getPart($imap, int $uid, stdClass $structure, string $mimeType, string $section = ''): string
     {
+
         if ($mimeType == getMimeType($structure))
         {
             if (!$section) $section = 1;
@@ -185,7 +214,7 @@
         $mail->addCustomHeader('X-fluid_tag', $dataEnv['titleText']);
         $mail->addCustomHeader('X-client_id', $clientId);
 
-        $mail->msgHTML($message);
+        $mail->msgHTML("<div style='background-color: lightgray;padding: 12px'><strong>e-mail заказа: </strong>$sender</div>$message");
 
     // Отправляем
         if ($mail->send())

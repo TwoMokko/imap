@@ -40,7 +40,7 @@ function run(array $envDataMail): void
             continue;
         };
 
-        echo '-----------<br><br>';
+        echo '<br>-----------<br><br>';
         echo '<strong>ID:</strong> ', $id, '<br>';
         echo '<strong>Дата:</strong> ', $data['date'], '<br>';
         echo '<strong>Тема:</strong> ', $data['subject'], '<br>';

@@ -37,9 +37,7 @@
 
 function getPartAttachment($imap, int $uid, stdClass $structure, string $section = ''): array {
     if (isset($structure->disposition) && $structure->disposition == 'attachment') {
-        dump($section);
-        $partStruct = imap_bodystruct($imap, $uid,
-            $section);
+        $partStruct = imap_bodystruct($imap, $uid, $section);
         $attachmentDetails = array(
             "name"    => $partStruct->dparameters[0]->value,
             "section" => $section,

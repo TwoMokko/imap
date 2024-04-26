@@ -15,34 +15,19 @@
         require_once 'attachment.php';
         $attachments = getPartAttachment($imap, $uid, $structure);
         echo "Attachments: ";
-        var_dump($attachments);
-        $message = imap_fetchbody($imap, $uid, $attachments['section'], FT_UID);
+//        var_dump($attachments);
 
-//        switch ($attachments['enc']) {
-//            case 0:
-//            case 1:
-//                $message = imap_8bit($message);
-//                break;
-//            case 2:
-//                $message = imap_binary($message);
-//                break;
-//            case 3:
-//                $message = imap_base64($message);
-//                break;
-//            case 4:
-//                $message = quoted_printable_decode($message);
-//                break;
-//        }
+        $filename = 'Подбор оборудования ЭЛ-СКАДА.doc';
+        echo 'file: ';
+        dump($uid);
+        $file = (imap_fetchbody($imap, $uid, $attachments['section']));
 
-        var_dump($message);
+//        $file = imap_base64(imap_fetchbody($imap, $uid, 2, FT_UID));
+//        $file = imap_base64(imap_fetchbody($imap, $uid, $attachments['section'], FT_UID));
+//        file_put_contents('file/' . $filename, $file);
 
-        return false;
+        dump($file);
 
-//        echo '<br>header info: <br>';
-//        echo '<pre>';
-//        print_r($headerInfo->to);
-//        echo '<pre>';
-//        echo count($headerInfo->to);
 
         $recipient = (isset($headerInfo->toaddress)) ? getRecipient($mail, $headerInfo->to) : UNDISCLOSED_RECIPIENTS;
         $scenarioAndVid = getScenarioAndVid($recipient, $connect, $foreignTable, $mail);
@@ -210,6 +195,8 @@
     // html текст письма
         $mail->isHTML(true);
         $mail->Subject = $data['subject'] . $dataEnv['titleText'];
+//        $mail->addCustomHeader('X-client_mail_id', $clientMailId);
+        // TODO: уникальный айди каждому письму
         $mail->addCustomHeader('X-client_mail', $sender);
         $mail->addCustomHeader('X-fluid_tag', $dataEnv['titleText']);
         $mail->addCustomHeader('X-client_id', $clientId);

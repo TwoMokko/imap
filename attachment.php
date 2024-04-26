@@ -35,15 +35,14 @@
 //}
 
 
-function getPartAttachment($imap, int $uid, stdClass $structure, string $section = ''): array {
+function getPartAttachment(array & $attachments, $imap, int $uid, stdClass $structure, string $section = ''): array {
     if (isset($structure->disposition) && $structure->disposition == 'attachment') {
         $partStruct = imap_bodystruct($imap, $uid, $section);
-        $attachmentDetails = array(
-            "name"    => $partStruct->dparameters[0]->value,
+        $attachments[] = array(
+            "name"    => mb_decode_mimeheader($partStruct->dparameters[0]->value),
             "section" => $section,
             "enc"     => $partStruct->encoding
         );
-        return $attachmentDetails;
 //        $text = imap_fetchbody($imap, $uid, $section);
 //        return imap_base64($text);
 ////        return mb_convert_encoding($text, 'UTF-8', 'KOI8-R');
@@ -56,7 +55,7 @@ function getPartAttachment($imap, int $uid, stdClass $structure, string $section
         foreach ($structure->parts as $index => $subStruct)
         {
             $prefix = $section ? $section . '.' : '';
-            if ($data = getPartAttachment($imap, $uid, $subStruct, $prefix . ($index + 1))) return $data;
+            if ($data = getPartAttachment($attachments, $imap, $uid, $subStruct, $prefix . ($index + 1))) return $data;
         }
     }
 

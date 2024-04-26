@@ -9,6 +9,19 @@
 
     ini_set('extension', 'php_imap.dll');
 
+    class Sett {
+        public string $id;
+        public string $directory;
+
+        public function __construct(string $id, string $directory)
+        {
+            $this->id = $id;
+            $this->directory = $directory;
+        }
+    }
+
+    $envDataHL2 = new Sett(1, $_ENV['DIRECTORY_HL']);
+
     $envDataHL = [
         'directory' => $_ENV['DIRECTORY_HL'],
         'username' => $_ENV['USER_HL'],
@@ -20,6 +33,7 @@
         'dbForeignTable' => $_ENV['DB_FOREIGN_TABLE_HL'],
         'titleText' => $_ENV['TITLE_TEXT_HL'],
         'mail' => 'hylok.ru',
+        'id' => 1
     ];
     $envDataHY = [
         'directory' => $_ENV['DIRECTORY_HY'],

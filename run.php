@@ -2,7 +2,7 @@
 
 require_once 'functions.php';
 
-function run(array $envDataMail): void
+function run(array $envDataMail): void//TODO Указать тип Sett
 {
     $table = 'email_tracking';
     $mailbox = '{imap.yandex.ru:993/imap/ssl}' . $envDataMail['directory'];
@@ -41,6 +41,7 @@ function run(array $envDataMail): void
         };
 
         echo '<br>-----------<br><br>';
+//        echo implode('.', [$envDataMail->id, $id, uniqid('', true)]);
         echo '<strong>ID:</strong> ', $id, '<br>';
         echo '<strong>Дата:</strong> ', $data['date'], '<br>';
         echo '<strong>Тема:</strong> ', $data['subject'], '<br>';

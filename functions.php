@@ -9,24 +9,38 @@
 
     function getData($imap, int $uid, PDO $connect, string $foreignTable, string $mail): array|bool
     {
+//    $name = mb_decode_mimeheader('=?UTF-8?B?0JrQsNGA0YLQvtGH0LrQsCDQv9GA0LXQtNC/0YDQuNGP0YLQuNGPINCi0LU=?= =?UTF-8?B?0YXQn9C+0YHRgtCw0LLQutCwLmRvYw==?=');
+//    dump($name);
+//        $str='=?windows-1251?B?yuDw8u736uAgzs3PxyBjIDA2LjEyLjIwMjEucGRm?=';
+//        $matches = [];
+//        preg_match('/=\?([^?]+)\?(B)\?([^?]+)\?=/', $str, $matches);
+//        dump($matches);
+////        foreach ()
+
+
         $headerInfo = imap_headerinfo($imap, $uid);
         $structure = imap_fetchstructure($imap, $uid);
         dump($structure);
         require_once 'attachment.php';
-        $attachments = getPartAttachment($imap, $uid, $structure);
-        echo "Attachments: ";
+        $attachments = [];
+        getPartAttachment($attachments, $imap, $uid, $structure);
+        foreach ($attachments as $attachment) {
+            dump($attachment);
+            echo "Attachments: ";
 //        var_dump($attachments);
 
-        $filename = 'Подбор оборудования ЭЛ-СКАДА.doc';
-        echo 'file: ';
-        dump($uid);
-        $file = (imap_fetchbody($imap, $uid, $attachments['section']));
+            $filename = 'Подбор оборудования ЭЛ-СКАДА.doc';
+            dump($attachment['section']);
+//            echo 'file: ';
+            $file = imap_fetchbody($imap, $uid, $attachment['section']);
 
 //        $file = imap_base64(imap_fetchbody($imap, $uid, 2, FT_UID));
 //        $file = imap_base64(imap_fetchbody($imap, $uid, $attachments['section'], FT_UID));
 //        file_put_contents('file/' . $filename, $file);
 
-        dump($file);
+//            dump($file);
+        }
+
 
 
         $recipient = (isset($headerInfo->toaddress)) ? getRecipient($mail, $headerInfo->to) : UNDISCLOSED_RECIPIENTS;
@@ -138,6 +152,10 @@
 
     function createTable(PDO $connect, string $table, string $foreignTable, string $foreignField): void
     {
+//        $sql = f(__DIR__ . '/create.sql', [
+//            'TABLE' => $table
+//
+//        ]);
         $sql = "CREATE TABLE IF NOT EXISTS $table (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY NOT NULL,
         `visitor_id` INT,

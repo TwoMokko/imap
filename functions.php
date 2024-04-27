@@ -3,45 +3,15 @@
     use PHPMailer\PHPMailer\PHPMailer;
     use PHPMailer\PHPMailer\SMTP;
 
-
-
     const UNDISCLOSED_RECIPIENTS = 'нераскрытые получатели';
 
     function getData($imap, int $uid, PDO $connect, string $foreignTable, string $mail): array|bool
     {
-//    $name = mb_decode_mimeheader('=?UTF-8?B?0JrQsNGA0YLQvtGH0LrQsCDQv9GA0LXQtNC/0YDQuNGP0YLQuNGPINCi0LU=?= =?UTF-8?B?0YXQn9C+0YHRgtCw0LLQutCwLmRvYw==?=');
-//    dump($name);
-//        $str='=?windows-1251?B?yuDw8u736uAgzs3PxyBjIDA2LjEyLjIwMjEucGRm?=';
-//        $matches = [];
-//        preg_match('/=\?([^?]+)\?(B)\?([^?]+)\?=/', $str, $matches);
-//        dump($matches);
-////        foreach ()
-
-
         $headerInfo = imap_headerinfo($imap, $uid);
         $structure = imap_fetchstructure($imap, $uid);
-        dump($structure);
-        require_once 'attachment.php';
+
         $attachments = [];
-        getPartAttachment($attachments, $imap, $uid, $structure);
-        foreach ($attachments as $attachment) {
-            dump($attachment);
-            echo "Attachments: ";
-//        var_dump($attachments);
-
-            $filename = 'Подбор оборудования ЭЛ-СКАДА.doc';
-            dump($attachment['section']);
-//            echo 'file: ';
-            $file = imap_fetchbody($imap, $uid, $attachment['section']);
-
-//        $file = imap_base64(imap_fetchbody($imap, $uid, 2, FT_UID));
-//        $file = imap_base64(imap_fetchbody($imap, $uid, $attachments['section'], FT_UID));
-//        file_put_contents('file/' . $filename, $file);
-
-//            dump($file);
-        }
-
-
+        getPartAttachments($attachments, $imap, $uid, $structure);
 
         $recipient = (isset($headerInfo->toaddress)) ? getRecipient($mail, $headerInfo->to) : UNDISCLOSED_RECIPIENTS;
         $scenarioAndVid = getScenarioAndVid($recipient, $connect, $foreignTable, $mail);
@@ -55,6 +25,7 @@
             'message' => (getBody($imap, $uid, $structure)),
             'scenario' => $scenarioAndVid['scenario'],
             'visitor_id' => $scenarioAndVid['visitor_id'],
+            'attachments' => $attachments,
         ];
     }
 
@@ -94,7 +65,6 @@
                 4 => imap_qprint($text),
                 default => $text,
             };
-    //        var_dump(($structure->parameters[0]->value));
             if (gettype($structure->parameters) == 'array' && $structure->parameters[0]->attribute == 'charset')
             {
                 $text = match ($structure->parameters[0]->value) {
@@ -150,6 +120,28 @@
         ];
     }
 
+    function getPartAttachments(array & $attachments, $imap, int $uid, stdClass $structure, string $section = ''): array {
+        if (isset($structure->disposition) && $structure->disposition == 'attachment') {
+            $partStruct = imap_bodystruct($imap, $uid, $section);
+            $name = $partStruct->parameters[0]->value;
+            $attachments[] = array(
+                "name"    => (preg_match('/^=\?.+?=$/m', $name)) ? mb_decode_mimeheader($name) : $name,
+                "section" => $section,
+                "enc"     => $partStruct->encoding
+            );
+        }
+
+        if (property_exists($structure, 'parts') && $structure->type == 1) {
+            foreach ($structure->parts as $index => $subStruct)
+            {
+                $prefix = $section ? $section . '.' : '';
+                if ($data = getPartAttachments($attachments, $imap, $uid, $subStruct, $prefix . ($index + 1))) return $data;
+            }
+        }
+
+        return [];
+    }
+
     function createTable(PDO $connect, string $table, string $foreignTable, string $foreignField): void
     {
 //        $sql = f(__DIR__ . '/create.sql', [
@@ -182,23 +174,20 @@
 
     function sendData(PDO $connect, array $data, string $table): void
     {
-//        echo 'rec: ', $data['recipient'];
-//        die;
-
         $date = new DateTime($data['date']);
         $dateResult = $date->format('Y-m-d H:i:s');
         $stmt = $connect->prepare("INSERT INTO $table VALUES (0, ?, ?, ?, ?, ?, ?, ?)");
         $stmt->execute([$data['visitor_id'], $dateResult, $data['subject'], $data['recipient'], $data['sender'], $data['message'], $data['scenario']]);
     }
 
-    function sendMail(array $data, array $dataEnv, string $clientId): void
+    function sendMail(array $data, Common\Set $dataEnv, string $clientId, string $clientMailId, $imap, $uid): void
     {
     // Создаем письмо
         $mail = new PHPMailer();
         $mail->SMTPDebug = SMTP::DEBUG_SERVER;
         $mail->isSMTP();                                                                    // Отправка через SMTP
         $mail->Host   = $_ENV['SMTP_HOST'];                                                 // Адрес SMTP сервера
-        $mail->Port   = $_ENV['SMTP_PORT'];                                                                // Адрес порта
+        $mail->Port   = $_ENV['SMTP_PORT'];                                                 // Адрес порта
         $mail->SMTPAuth   = true;                                                           // Enable SMTP authentication
         $mail->Username   = $_ENV['SMTP_EMAIL'];                                            // ваше имя пользователя (без домена и @) info@swagelok.su
         $mail->Password   = $_ENV['SMTP_PASSWORD'];                                         // ваш пароль zRX8r*5Z
@@ -212,19 +201,23 @@
         $mail->addAddress($_ENV['SMTP_TO_EMAIL'], $_ENV['SMTP_TO_NAME']);                   // кому (email и имя)
     // html текст письма
         $mail->isHTML(true);
-        $mail->Subject = $data['subject'] . $dataEnv['titleText'];
-//        $mail->addCustomHeader('X-client_mail_id', $clientMailId);
-        // TODO: уникальный айди каждому письму
+        $mail->Subject = $data['subject'] . $dataEnv->titleText;
+        $mail->addCustomHeader('X-client_mail_id', $clientMailId);
         $mail->addCustomHeader('X-client_mail', $sender);
-        $mail->addCustomHeader('X-fluid_tag', $dataEnv['titleText']);
+        $mail->addCustomHeader('X-fluid_tag', $dataEnv->titleText);
         $mail->addCustomHeader('X-client_id', $clientId);
+
+        foreach ($data['attachments'] as $attachment) {
+            $file = imap_base64(imap_fetchbody($imap, $uid, $attachment['section']));
+            $mail->addStringAttachment($file, $attachment['name']);
+        }
 
         $mail->msgHTML("<div style='background-color: lightgray;padding: 12px'><strong>e-mail заказа: </strong>$sender</div>$message");
 
     // Отправляем
         if ($mail->send())
         {
-            echo 'Письмо отправлено!' . PHP_EOL;
+            echo 'Письмо с почты ' . $dataEnv->mail . ' отправлено!' . PHP_EOL;
         } else
         {
             echo 'Ошибка: ' . $mail->ErrorInfo;

@@ -3,76 +3,80 @@
 
     require_once 'vendor/autoload.php';
     require_once 'run.php';
+    require_once 'set.php';
 
     $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
     $dotenv->load();
 
     ini_set('extension', 'php_imap.dll');
 
-    class Sett {
-        public string $id;
-        public string $directory;
+    $envDataHL = new Common\Set(
+        $_ENV['DIRECTORY_HL'],
+        $_ENV['USER_HL'],
+        $_ENV['PASSWORD_HL'],
+        $_ENV['DB_HOST_HL'],
+        $_ENV['DB_USERNAME_HL'],
+        $_ENV['DB_PASSWORD_HL'],
+        $_ENV['DB_DATABASE_HL'],
+        $_ENV['DB_FOREIGN_TABLE_HL'],
+        $_ENV['TITLE_TEXT_HL'],
+        'hylok.ru',
+    );
 
-        public function __construct(string $id, string $directory)
-        {
-            $this->id = $id;
-            $this->directory = $directory;
-        }
-    }
+    $envDataHY = new Common\Set(
+        $_ENV['DIRECTORY_HY'],
+        $_ENV['USER_HY'],
+        $_ENV['PASSWORD_HY'],
+        $_ENV['DB_HOST_HY'],
+        $_ENV['DB_USERNAME_HY'],
+        $_ENV['DB_PASSWORD_HY'],
+        $_ENV['DB_DATABASE_HY'],
+        $_ENV['DB_FOREIGN_TABLE_HY'],
+        $_ENV['TITLE_TEXT_HY'],
+        'hy-lok.ru',
+    );
 
-    $envDataHL2 = new Sett(1, $_ENV['DIRECTORY_HL']);
+    $envDataSW = new Common\Set(
+        $_ENV['DIRECTORY_SW'],
+        $_ENV['USER_SW'],
+        $_ENV['PASSWORD_SW'],
+        $_ENV['DB_HOST_SW'],
+        $_ENV['DB_USERNAME_SW'],
+        $_ENV['DB_PASSWORD_SW'],
+        $_ENV['DB_DATABASE_SW'],
+        $_ENV['DB_FOREIGN_TABLE_SW'],
+        $_ENV['TITLE_TEXT_SW'],
+        'swagelok.su',
+    );
 
-    $envDataHL = [
-        'directory' => $_ENV['DIRECTORY_HL'],
-        'username' => $_ENV['USER_HL'],
-        'password' => $_ENV['PASSWORD_HL'],
-        'dbHost' => $_ENV['DB_HOST_HL'],
-        'dbUsername' => $_ENV['DB_USERNAME_HL'],
-        'dbPassword' => $_ENV['DB_PASSWORD_HL'],
-        'dataBase' => $_ENV['DB_DATABASE_HL'],
-        'dbForeignTable' => $_ENV['DB_FOREIGN_TABLE_HL'],
-        'titleText' => $_ENV['TITLE_TEXT_HL'],
-        'mail' => 'hylok.ru',
-        'id' => 1
-    ];
-    $envDataHY = [
-        'directory' => $_ENV['DIRECTORY_HY'],
-        'username' => $_ENV['USER_HY'],
-        'password' => $_ENV['PASSWORD_HY'],
-        'dbHost' => $_ENV['DB_HOST_HY'],
-        'dbUsername' => $_ENV['DB_USERNAME_HY'],
-        'dbPassword' => $_ENV['DB_PASSWORD_HY'],
-        'dataBase' => $_ENV['DB_DATABASE_HY'],
-        'dbForeignTable' => $_ENV['DB_FOREIGN_TABLE_HY'],
-        'titleText' => $_ENV['TITLE_TEXT_HY'],
-        'mail' => 'hy-lok.ru',
-    ];
-    $envDataSW = [
-        'directory' => $_ENV['DIRECTORY_SW'],
-        'username' => $_ENV['USER_SW'],
-        'password' => $_ENV['PASSWORD_SW'],
-        'dbHost' => $_ENV['DB_HOST_SW'],
-        'dbUsername' => $_ENV['DB_USERNAME_SW'],
-        'dbPassword' => $_ENV['DB_PASSWORD_SW'],
-        'dataBase' => $_ENV['DB_DATABASE_SW'],
-        'dbForeignTable' => $_ENV['DB_FOREIGN_TABLE_SW'],
-        'titleText' => $_ENV['TITLE_TEXT_SW'],
-        'mail' => 'swagelok.su',
-    ];
-    $envDataWIKA = [
-        'directory' => $_ENV['DIRECTORY_WIKA'],
-        'username' => $_ENV['USER_WIKA'],
-        'password' => $_ENV['PASSWORD_WIKA'],
-        'dbHost' => $_ENV['DB_HOST_WIKA'],
-        'dbUsername' => $_ENV['DB_USERNAME_WIKA'],
-        'dbPassword' => $_ENV['DB_PASSWORD_WIKA'],
-        'dataBase' => $_ENV['DB_DATABASE_WIKA'],
-        'dbForeignTable' => $_ENV['DB_FOREIGN_TABLE_WIKA'],
-        'titleText' => $_ENV['TITLE_TEXT_WIKA'],
-        'mail' => 'wika-manometry.ru',
-    ];
+    $envDataWIKA = new Common\Set(
+        $_ENV['DIRECTORY_WIKA'],
+        $_ENV['USER_WIKA'],
+        $_ENV['PASSWORD_WIKA'],
+        $_ENV['DB_HOST_WIKA'],
+        $_ENV['DB_USERNAME_WIKA'],
+        $_ENV['DB_PASSWORD_WIKA'],
+        $_ENV['DB_DATABASE_WIKA'],
+        $_ENV['DB_FOREIGN_TABLE_WIKA'],
+        $_ENV['TITLE_TEXT_WIKA'],
+        'wika-manometry.ru',
+    );
+
+    $envDataCZ = new Common\Set(
+        $_ENV['DIRECTORY_CZ'],
+        $_ENV['USER_CZ'],
+        $_ENV['PASSWORD_CZ'],
+        $_ENV['DB_HOST_CZ'],
+        $_ENV['DB_USERNAME_CZ'],
+        $_ENV['DB_PASSWORD_CZ'],
+        $_ENV['DB_DATABASE_CZ'],
+        $_ENV['DB_FOREIGN_TABLE_CZ'],
+        $_ENV['TITLE_TEXT_CZ'],
+        'camozzi.ru.net',
+    );
 
     run($envDataHL);
-//    run($envDataHY);
-//    run($envDataSW);
-//    run($envDataWIKA);
+    run($envDataHY);
+    run($envDataSW);
+    run($envDataWIKA);
+//    run($envDataCZ);
